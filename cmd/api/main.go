@@ -64,7 +64,7 @@ func main() {
 	jwtMiddleware := jwt.New(authService)
 
 	userRouter := handler.NewUserHandler(userService, authService, validator, log, jwtMiddleware)
-	authRouter := handler.NewAuthHandler(authService, validator)
+	authRouter := handler.NewAuthHandler(authService, validator, jwtMiddleware)
 
 	r.Mount("/user", userRouter.InitRouter())
 	r.Mount("/auth", authRouter.InitRouter())
