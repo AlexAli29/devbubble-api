@@ -3,10 +3,15 @@ package main
 import (
 	"context"
 	"devbubble-api/internal/config"
+	db "devbubble-api/internal/repository"
+	"devbubble-api/internal/service"
 	handler "devbubble-api/internal/transport/http/handler"
+	"devbubble-api/internal/transport/http/middleware/jwt"
 	mwLogger "devbubble-api/internal/transport/http/middleware/logger"
 	"devbubble-api/pkg/logger"
 	"devbubble-api/pkg/logger/sl"
+	customValidator "devbubble-api/pkg/validator"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,6 +21,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5"
 )
 
 func main() {
@@ -26,12 +34,40 @@ func main() {
 	r.Use(mwLogger.New(log))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
+	r.Use(cors.Handler(cors.Options{
 
-	userRouter := handler.NewUserHandler()
-	authRouter := handler.NewAuthHandler()
+		AllowedOrigins: []string{"https://*", "http://*"},
 
-	r.Mount("/user", userRouter)
-	r.Mount("/auth", authRouter)
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s?timezone=Europe/Moscow", cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.DBName))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
+	log.Info(fmt.Sprintf("DB connected [PORT]:%s [HOST]:%s", cfg.DB.Port, cfg.DB.Host))
+
+	queries := db.New(conn)
+
+	validator := customValidator.New(validator.New())
+
+	emailService := service.NewEmailService(cfg.SMTP.From, cfg.SMTP.Password, cfg.SMTP.Host, cfg.SMTP.Port, log)
+	authService := service.NewAuthService(queries, emailService, log, cfg)
+	userService := service.NewUserService(queries, authService, log)
+
+	jwtMiddleware := jwt.New(authService)
+
+	userRouter := handler.NewUserHandler(userService, authService, validator, log, jwtMiddleware)
+	authRouter := handler.NewAuthHandler(authService, validator)
+
+	r.Mount("/user", userRouter.InitRouter())
+	r.Mount("/auth", authRouter.InitRouter())
 
 	apiRouter := chi.NewRouter()
 	apiRouter.Mount("/api", r)

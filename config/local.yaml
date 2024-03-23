@@ -3,3 +3,17 @@ http_server:
   address: "localhost:8082"
   timeout: 4s
   iddle_timeout: 60s
+db:
+  host: "localhost"
+  user: "admin"
+  password: "password123"
+  db_name: "dev_bubble"
+  port: "5440"
+smtp:
+  host: "smtp.gmail.com"
+  port: "587"
+  from: "devbubbleinc@gmail.com"
+  password: "myxieiamsfplpdxo"
+jwt:
+  secret: gdgdhf4y4563w6ji3oqh5uih5uihuiqfufihuhiifuh45uihfquhivheibibhuj
+  expirationTimeHours: 72
