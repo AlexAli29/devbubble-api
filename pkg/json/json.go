@@ -23,6 +23,7 @@ func JsonResponse(w http.ResponseWriter, code int, payload interface{}) {
 		w.Write([]byte("Invalid JSON"))
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
 }

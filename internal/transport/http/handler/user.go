@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"devbubble-api/internal/core"
-	db "devbubble-api/internal/repository"
 
 	"devbubble-api/pkg/json"
 	"devbubble-api/pkg/validator"
@@ -16,9 +15,9 @@ import (
 
 type UserService interface {
 	GetUserById(id int) string
-	CreateUser(ctx context.Context, userDto core.CreateUserDto) (*db.User, error)
+	CreateUser(ctx context.Context, userDto core.CreateUserDto) (string, error)
 	VerifyUser(ctx context.Context, dto core.VerifyUserDto) (string, error)
-	GetCurrentUser(ctx context.Context, id string) (*core.CurrentUserResponse, error)
+	GetCurrentUser(ctx context.Context, id string) (core.CurrentUserResponse, error)
 }
 
 type UserHandler struct {
@@ -70,15 +69,16 @@ func (h *UserHandler) createUser(w http.ResponseWriter, r *http.Request) {
 
 	err = h.validator.Validate(w, user)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, err = h.userService.CreateUser(r.Context(), user)
+	email, err := h.userService.CreateUser(r.Context(), user)
 	if err != nil {
-		json.HttpError(w, http.StatusBadRequest, "email already taken")
+		json.HttpError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+	json.JsonResponse(w, http.StatusCreated, core.CreateUserResponse{Email: email})
 
 }
 
@@ -96,7 +96,7 @@ func (h *UserHandler) verifyUser(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := h.userService.VerifyUser(r.Context(), dto)
 	if err != nil {
-		json.HttpError(w, http.StatusUnauthorized, err.Error())
+		json.HttpError(w, http.StatusUnauthorized, "wrong code")
 		return
 	}
 

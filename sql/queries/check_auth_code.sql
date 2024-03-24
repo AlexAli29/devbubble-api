@@ -1,16 +1,3 @@
--- name: CreateAuthCode :one
-INSERT INTO auth_codes (user_id)
-VALUES ($1)
-RETURNING code;
-
-
--- name: UpdateAuthCode :one
-UPDATE auth_codes
-SET code = $1  -- Replace $1 with the new code value
-WHERE user_id = $2  -- Replace $2 with the user ID
-RETURNING code;  -- Optional: retrieve the updated code
-
-
 -- name: CheckAuthCode :one
 WITH matched_user AS (
     SELECT auth_codes.user_id

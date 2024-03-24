@@ -20,3 +20,6 @@ type SignInDto struct {
 type GenerateAuthCodeDto struct {
 	Email string `json:"email" validate:"required,email"`
 }
+type GenerateAuthCodeResponse struct {
+	Email string `json:"email" validate:"required,email"`
+}

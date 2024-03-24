@@ -7,5 +7,6 @@ CREATE TABLE users (
     is_verified BOOLEAN DEFAULT FALSE
 );
 
+
 -- +goose Down
 DROP TABLE users;

@@ -1,8 +1,3 @@
--- name: CreateUser :one
-INSERT INTO users (name, email)
-VALUES ($1,$2)
-RETURNING *;
-
 -- name: VerifyUser :one
 WITH matched_user AS (
   SELECT 
@@ -14,7 +9,7 @@ WITH matched_user AS (
   WHERE 
     u.email = $1 -- Плейсхолдер для параметра email
     AND ac.code = $2 -- Плейсхолдер для параметра кода аутентификации
-    AND ac.created_at >= NOW() - INTERVAL '10 minutes'
+    AND ac.updated_at >= NOW() - INTERVAL '10 minutes'
 ),
 updated_users AS (
   UPDATE users
@@ -33,21 +28,3 @@ updated_auth_code AS (
   RETURNING auth_codes.user_id
 )
 SELECT id FROM updated_users;
-
--- name: GenerateAuthCode :one
-WITH updated AS (
-  UPDATE auth_codes
-  SET code = floor(random() * 900000 + 100000)     
-  FROM users  
-  WHERE users.email = $1 
-    AND auth_codes.user_id = users.id 
-  RETURNING auth_codes.code
-)
-SELECT code FROM updated;
-
--- name: GetUserById :one
-SELECT * FROM users WHERE id = $1;
-
-
-
-

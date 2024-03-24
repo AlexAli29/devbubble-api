@@ -18,13 +18,14 @@ type AuthService interface {
 	GenerateAuthCode(ctx context.Context, email string) error
 }
 type AuthHandler struct {
-	authService AuthService
-	validate    *validator.Validator
+	authService   AuthService
+	validate      *validator.Validator
+	jwtMiddleware func(next http.Handler) http.Handler
 }
 
-func NewAuthHandler(authService AuthService, validate *validator.Validator) *AuthHandler {
+func NewAuthHandler(authService AuthService, validate *validator.Validator, jwtMiddleware func(next http.Handler) http.Handler) *AuthHandler {
 
-	return &AuthHandler{authService, validate}
+	return &AuthHandler{authService, validate, jwtMiddleware}
 
 }
 
@@ -33,6 +34,8 @@ func (h *AuthHandler) InitRouter() chi.Router {
 
 	r.Post("/signIn", h.SignIn)
 	r.Post("/generate", h.GenerateAuthCode)
+	r.With(h.jwtMiddleware).Post("/logOut", h.LogOut)
+	r.With(h.jwtMiddleware).Get("/session", h.CheckSession)
 	return r
 }
 
@@ -50,10 +53,10 @@ func (h *AuthHandler) GenerateAuthCode(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.authService.GenerateAuthCode(r.Context(), dto.Email)
 	if err != nil {
-		json.HttpError(w, http.StatusInternalServerError, err.Error())
+		json.HttpError(w, http.StatusInternalServerError, "wrong email")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	json.JsonResponse(w, http.StatusOK, core.GenerateAuthCodeResponse{Email: dto.Email})
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -91,5 +94,30 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *AuthHandler) LogOut(w http.ResponseWriter, r *http.Request) {
+
+	cookie := &http.Cookie{
+		Name:     "Session",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *AuthHandler) CheckSession(w http.ResponseWriter, r *http.Request) {
+	_, ok := r.Context().Value("UserId").(string)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
