@@ -1,30 +1,30 @@
 -- name: VerifyUser :one
 WITH matched_user AS (
   SELECT 
-    u.id,
-    ac.id as auth_code_id -- Получаем ID кода аутентификации для последующего обновления
+    "u"."id",
+    "ac"."id" as "authCodeId" -- Получаем ID кода аутентификации для последующего обновления
   FROM 
-    users u
-    INNER JOIN auth_codes ac ON u.id = ac.user_id
+    "users" "u"
+    INNER JOIN "auth_codes" "ac" ON "u"."id" = "ac"."userId"
   WHERE 
-    u.email = $1 -- Плейсхолдер для параметра email
-    AND ac.code = $2 -- Плейсхолдер для параметра кода аутентификации
-    AND ac.updated_at >= NOW() - INTERVAL '10 minutes'
+    "u"."email" = $1 -- Плейсхолдер для параметра email
+    AND "ac"."code" = $2 -- Плейсхолдер для параметра кода аутентификации
+    AND "ac"."updatedAt" >= NOW() - INTERVAL '10 minutes'
 ),
 updated_users AS (
-  UPDATE users
-  SET is_verified = TRUE
+  UPDATE "users"
+  SET "isVerified" = TRUE
   FROM matched_user
-  WHERE users.id = matched_user.id
-  RETURNING users.id
+  WHERE "users"."id" = matched_user.id
+  RETURNING "users"."id"
 ),
 updated_auth_code AS (
-  UPDATE auth_codes
+  UPDATE "auth_codes"
   SET 
-    code = floor(random() * 900000 + 100000), -- Генерируем новый код
-    updated_at = NOW() -- Обновляем время
+    "code" = floor(random() * 900000 + 100000), -- Генерируем новый код
+    "updatedAt" = NOW() -- Обновляем время
   FROM matched_user
-  WHERE auth_codes.id = matched_user.auth_code_id -- Обновляем существующий код аутентификации
-  RETURNING auth_codes.user_id
+  WHERE "auth_codes"."id" = matched_user."authCodeId" -- Обновляем существующий код аутентификации
+  RETURNING "auth_codes"."userId"
 )
-SELECT id FROM updated_users;
+SELECT "id" FROM updated_users;

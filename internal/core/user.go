@@ -9,11 +9,20 @@ type VerifyUserDto struct {
 	Email string `json:"email" validate:"required"`
 }
 
-type CurrentUserResponse struct {
-	Id    string `json:"id"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+type UpdateUserDto struct {
+	Id          string `json:"id" validate:"required,uuid"`
+	Name        string `json:"name" validate:"required,min=2"`
+	Description string `json:"description"`
 }
+
+type CurrentUserResponse struct {
+	Id          string `json:"id"`
+	Email       string `json:"email"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Tags        []Tag  `json:"tags"`
+}
+
 type CreateUserResponse struct {
 	Email string `json:"email"`
 }

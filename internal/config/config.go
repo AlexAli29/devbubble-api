@@ -14,6 +14,7 @@ type Config struct {
 	DB         `yaml:"db"`
 	SMTP       `yaml:"smtp"`
 	JWT        `yaml:"jwt"`
+	Client     `yaml:"client"`
 }
 
 type HTTPServer struct {
@@ -40,6 +41,10 @@ type SMTP struct {
 type JWT struct {
 	Secret              string `yaml:"secret" env-default:"ffgdgfhhgfgfhghfhgdhffhdghfgfhgfhghdgf3t43tt33te"`
 	ExpirationTimeHours int    `yaml:"expirationTimeHours" env-default:72`
+}
+
+type Client struct {
+	Origin string `yaml:"origin" env-default:http://localhost:3000`
 }
 
 func MustLoad() *Config {

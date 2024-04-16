@@ -1,8 +1,13 @@
 version: "3.9"
 services:
+  devbubble-api:
+    container_name: api-dev-bubble
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
   pg-dev-bubble:
     container_name: pg-dev-bubble
-
     ports:
       - 5440:5432
     image: bitnami/postgresql:15.3.0

@@ -17,3 +17,5 @@ smtp:
 jwt:
   secret: gdgdhf4y4563w6ji3oqh5uih5uihuiqfufihuhiifuh45uihfquhivheibibhuj
   expirationTimeHours: 72
+client:
+  origin: "http://localhost:3000"

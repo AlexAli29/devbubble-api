@@ -5,6 +5,7 @@ import (
 	"devbubble-api/internal/core"
 	db "devbubble-api/internal/repository"
 	"devbubble-api/pkg/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -21,6 +22,21 @@ type UserService struct {
 func NewUserService(queries *db.Queries, authService *AuthService, log *slog.Logger) *UserService {
 
 	return &UserService{queries, authService, log}
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, userDto core.UpdateUserDto) error {
+	userIdUUID := pgtype.UUID{}
+
+	err := userIdUUID.Scan(userDto.Id)
+	if err != nil {
+		return err
+	}
+	err = s.queries.UpdateUser(ctx, db.UpdateUserParams{ID: userIdUUID, Name: userDto.Name, Description: userDto.Description})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *UserService) GetUserById(id int) string {
@@ -79,5 +95,17 @@ func (s *UserService) GetCurrentUser(ctx context.Context, id string) (core.Curre
 	if err != nil {
 		return core.CurrentUserResponse{}, err
 	}
-	return core.CurrentUserResponse{Id: sql.UUIDToString(dbUser.ID), Email: dbUser.Email, Name: dbUser.Name}, nil
+	s.log.Debug(fmt.Sprintf("%v", dbUser.Tags))
+	var tags []core.Tag
+
+	// Unmarshal the JSON-encoded tags
+	if len(dbUser.Tags) > 0 {
+		err = json.Unmarshal(dbUser.Tags, &tags)
+		if err != nil {
+			// Handle error
+			fmt.Println("Error unmarshalling tags:", err)
+			return core.CurrentUserResponse{}, err
+		}
+	}
+	return core.CurrentUserResponse{Id: sql.UUIDToString(dbUser.ID), Email: dbUser.Email, Name: dbUser.Name, Description: dbUser.Description.String, Tags: tags}, nil
 }

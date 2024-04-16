@@ -5,6 +5,7 @@ import (
 	"devbubble-api/internal/core"
 	"devbubble-api/pkg/json"
 	"devbubble-api/pkg/validator"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -21,11 +22,12 @@ type AuthHandler struct {
 	authService   AuthService
 	validate      *validator.Validator
 	jwtMiddleware func(next http.Handler) http.Handler
+	log           *slog.Logger
 }
 
-func NewAuthHandler(authService AuthService, validate *validator.Validator, jwtMiddleware func(next http.Handler) http.Handler) *AuthHandler {
+func NewAuthHandler(authService AuthService, validate *validator.Validator, jwtMiddleware func(next http.Handler) http.Handler, log *slog.Logger) *AuthHandler {
 
-	return &AuthHandler{authService, validate, jwtMiddleware}
+	return &AuthHandler{authService, validate, jwtMiddleware, log}
 
 }
 
@@ -48,11 +50,12 @@ func (h *AuthHandler) GenerateAuthCode(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.validate.Validate(w, dto)
 	if err != nil {
-		json.HttpError(w, http.StatusBadRequest, err.Error())
+
 		return
 	}
 	err = h.authService.GenerateAuthCode(r.Context(), dto.Email)
 	if err != nil {
+		h.log.Debug(err.Error())
 		json.HttpError(w, http.StatusInternalServerError, "wrong email")
 		return
 	}
@@ -68,7 +71,7 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.validate.Validate(w, dto)
 	if err != nil {
-		json.HttpError(w, http.StatusBadRequest, err.Error())
+
 		return
 	}
 

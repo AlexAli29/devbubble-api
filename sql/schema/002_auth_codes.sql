@@ -1,18 +1,18 @@
 -- +goose Up
 CREATE TABLE auth_codes (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  code INTEGER NOT NULL DEFAULT (floor(random() * 900000 + 100000)),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (id, user_id)
+  "id" uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  "code" INTEGER NOT NULL DEFAULT (floor(random() * 900000 + 100000)),
+  "userId" UUID REFERENCES users(id) ON DELETE CASCADE,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (id, "userId")
 );
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION trigger_set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
+  NEW."updatedAt" = NOW();
   RETURN NEW;
 END;
 $$ 

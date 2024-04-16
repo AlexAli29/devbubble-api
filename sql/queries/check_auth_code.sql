@@ -1,18 +1,18 @@
 -- name: CheckAuthCode :one
 WITH matched_user AS (
-    SELECT auth_codes.user_id
-    FROM auth_codes
-    JOIN users ON auth_codes.user_id = users.id
-    WHERE users.email = $1
-      AND users.is_verified=true
-      AND auth_codes.code = $2
-      AND auth_codes.updated_at > (CURRENT_TIMESTAMP - INTERVAL '10 MINUTES')
+    SELECT "auth_codes"."userId"
+    FROM "auth_codes"
+    JOIN "users" ON "auth_codes"."userId" = "users"."id"
+    WHERE "users"."email" = $1
+      AND "users"."isVerified"=true
+      AND "auth_codes"."code" = $2
+      AND "auth_codes"."updatedAt" > (CURRENT_TIMESTAMP - INTERVAL '10 MINUTES')
     LIMIT 1
 ),
 updated AS (
-    UPDATE auth_codes
-    SET code = floor(random() * 900000 + 100000) -- Generates a new code        
-    WHERE user_id IN (SELECT user_id FROM matched_user)
-    RETURNING user_id
+    UPDATE "auth_codes"
+    SET "code" = floor(random() * 900000 + 100000) -- Generates a new code        
+    WHERE "userId" IN (SELECT "userId" FROM matched_user)
+    RETURNING "userId"
 )
-SELECT user_id FROM updated;
+SELECT "userId" FROM updated;
