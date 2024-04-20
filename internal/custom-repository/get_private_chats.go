@@ -13,7 +13,7 @@ pc.id AS "chatId",
 u.name AS "participantName",
 m.text AS "lastMessage",
 m."createdAt" AS "lastMessageTime",
-(m.user_id = $1) AS "isFromMe",
+(m."userId" = $1) AS "isFromMe",
 sender.name AS "lastMessageSenderName"
 FROM 
 chat_participants cp
@@ -47,7 +47,7 @@ AND pc.id IN (
     WHERE "userId" = $1
 )
 ORDER BY 
-m.createdAt DESC NULLS LAST;
+m."createdAt" DESC NULLS LAST;
 `
 
 type PrivateChat struct {
